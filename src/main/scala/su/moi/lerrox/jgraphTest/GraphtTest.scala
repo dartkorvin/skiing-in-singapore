@@ -53,25 +53,27 @@ object GraphtTest extends App{
   }
   println("edges added")
 
-  val iter = new TopologicalOrderIterator(graph)
-
   var max:Option[MaxCost] = None
-
-  iter.zipWithIndex.foreach{
-    case(item, count)=>
+  var counter = 0;
+  for(item <- mountainsByCoordinates.values){
+    counter += 1;
+    if(counter % 1000 == 0){
+      println(s" % ${counter / 1000} : ${new Date()}")
+    }
       val magicWand = new BellmanFordShortestPath(graph, item)
-      for(nextItem <- graph.vertexSet()){
+      for(nextItem <- mountainsByCoordinates.values){
         if(item.hight > nextItem.hight){
           max match {
             case Some(oldMax) =>{
               if(item != nextItem){
+                val drop = item.hight - nextItem.hight
                 val pathLength = magicWand.getCost(nextItem)
                 if(!pathLength.isInfinity && oldMax.length < pathLength * -1){
-                  val drop = item.hight - nextItem.hight
-                  if(drop > oldMax.drop) {
+                  max = Some(MaxCost(item, nextItem, drop, pathLength * -1))
+                  println(s"${max} : ${new Date()}")
+                } else if(!pathLength.isInfinity && oldMax.length == pathLength * -1 && drop > oldMax.drop){
                     max = Some(MaxCost(item, nextItem, drop, pathLength * -1))
-                    println(max)
-                  }
+                    println(s"${max} : ${new Date()}")
                 }
               }
             }
@@ -81,7 +83,7 @@ object GraphtTest extends App{
                 val length = magicWand.getCost(nextItem) * -1
                 val drop = item.hight - nextItem.hight
                 max = Some(MaxCost(item, nextItem, drop, length))
-                println(max)
+                println(s"${max} : ${new Date()}")
               }
             }
           }
