@@ -54,35 +54,43 @@ object GraphtTest extends App{
 
   val maxPathCost:Option[MaxCost] = iter.foldLeft[Option[MaxCost]](None){
     (old, item) =>
-    val magicPathFinder = new BellmanFordShortestPath(graph, item)
-    val max = graph.vertexSet().foldLeft[Option[MaxCost]](None){
-      (currentOld, nextItem) =>
-        if(nextItem == item || (!old.isEmpty && (item.hight - nextItem.hight) < old.get.cost)) old
-        else {
-          val cost:Double = magicPathFinder.getCost(nextItem)
-          currentOld match {
-            case Some(currentMax) => {
-              if(currentMax.cost > cost){
-                Some(new MaxCost(item, nextItem, cost))
-              } else {
-                Some(currentMax)
+    if(!old.isEmpty && old.get.cost < (item.hight * -1))  old
+    else {
+      val magicPathFinder = new BellmanFordShortestPath(graph, item)
+      val max = graph.vertexSet().foldLeft[Option[MaxCost]](None){
+        (currentOld, nextItem) =>
+          val dif = item.hight - nextItem.hight
+          if(nextItem == item) old
+          else {
+            val cost:Double = magicPathFinder.getCost(nextItem)
+            currentOld match {
+              case Some(currentMax) => {
+                if(currentMax.cost > cost){
+                  Some(new MaxCost(item, nextItem, cost))
+                } else {
+                  Some(currentMax)
+                }
               }
+              case None => Some(new MaxCost(item, nextItem, cost))
             }
-            case None => Some(new MaxCost(item, nextItem, cost))
-          }
-        }
-    }
-
-    old match {
-      case None => max
-      case Some(oldMax) => {
-          max.map{
-            m =>
-              if(m.cost > oldMax.cost) oldMax
-              else m
           }
       }
+
+      old match {
+        case None => max
+        case Some(oldMax) => {
+          max.map{
+            m =>
+              if(m.cost >= oldMax.cost) oldMax
+              else {
+                println(s"max cost changed to ${m.cost} ")
+                m
+              }
+          }
+        }
+      }
     }
+
   }
 
   maxPathCost match {
