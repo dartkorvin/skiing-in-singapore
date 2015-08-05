@@ -12,9 +12,10 @@ import scala.collection.JavaConversions._
 object GraphtTest extends App{
 
   val mapString = scala.io.Source.fromURL("http://s3-ap-southeast-1.amazonaws.com/geeks.redmart.com/coding-problems/map.txt").mkString
+  //val mapString = "4 4 \n4 8 7 3 \n2 5 9 3 \n6 3 2 5 \n4 4 1 6"
   val mountainsByCoordinates =   mapString.split("\n").zipWithIndex.flatMap{
     case(line, lineNum) =>
-      line.split(" ").zipWithIndex.map{
+      line.trim.split(" ").zipWithIndex.map{
         case (valueString, columnNum) =>
           Item(Point(columnNum, lineNum), valueString.toInt)
       }
@@ -39,7 +40,7 @@ object GraphtTest extends App{
               if(v.hight > item.hight){
                 val e = graph.addEdge(v, item)
                 val weight = v.hight - item.hight
-                graph.setEdgeWeight(e, weight * -1) //cheating
+                graph.setEdgeWeight(e, -1) //cheating
                // println(s"create Graph edje ((${v.coordinates.x}, ${v.coordinates.y}})->(${item.coordinates.x},${item.coordinates.y}})) with weight ${weight}")
               }
             }
@@ -52,55 +53,38 @@ object GraphtTest extends App{
 
   val iter = new TopologicalOrderIterator(graph)
 
-  val maxPathCost:Option[MaxCost] = iter.foldLeft[Option[MaxCost]](None){
-    (old, item) =>
-    if(!old.isEmpty && old.get.cost < (item.hight * -1))  old
-    else {
-      val magicPathFinder = new BellmanFordShortestPath(graph, item)
-      val max = graph.vertexSet().foldLeft[Option[MaxCost]](None){
-        (currentOld, nextItem) =>
-          val dif = item.hight - nextItem.hight
-          if(nextItem == item) old
-          else {
-            val cost:Double = magicPathFinder.getCost(nextItem)
-            currentOld match {
-              case Some(currentMax) => {
-                if(currentMax.cost > cost){
-                  Some(new MaxCost(item, nextItem, cost))
-                } else {
-                  Some(currentMax)
-                }
-              }
-              case None => Some(new MaxCost(item, nextItem, cost))
+  var max:Option[MaxCost] = None
+
+  for(item<- iter){
+    for(nextItem <- graph.vertexSet()){
+      val drop = item.hight - nextItem.hight
+      max match {
+        case Some(oldMax) =>{
+          if(drop > oldMax.drop){
+            val magicWand = new BellmanFordShortestPath(graph, item)
+            val pathLength = magicWand.getCost(nextItem)
+            if(!pathLength.isInfinity && oldMax.length <= pathLength * -1){
+              max = Some(MaxCost(item, nextItem, drop, pathLength * -1))
             }
           }
-      }
-
-      old match {
-        case None => max
-        case Some(oldMax) => {
-          max.map{
-            m =>
-              if(m.cost >= oldMax.cost) oldMax
-              else {
-                println(s"max cost changed to ${m.cost} ")
-                m
-              }
+        }
+        case None => {
+          if(item.hight > nextItem.hight){
+            val magicWand = new BellmanFordShortestPath(graph, item)
+            val length = magicWand.getCost(nextItem) * -1
+            max = Some(MaxCost(item, nextItem, drop, length))
           }
         }
       }
     }
-
   }
 
-  maxPathCost match {
+
+
+  max match {
     case None => println("not found an answer")
     case Some(max) =>{
-      val magicPathFinder = new BellmanFordShortestPath(graph, max.from)
-      val longestPath = magicPathFinder.getPathEdgeList(max.to)
-      val pathNodesCount = longestPath.size() + 1
-
-      println(s"longest path hight is ${max.cost * -1}, and it's path through ${pathNodesCount} mountains")
+      println(s"longest path drop is ${max.drop}, and it's path through ${max.length + 1} mountains")
     }
   }
 
@@ -109,4 +93,4 @@ object GraphtTest extends App{
 
 case class Item(coordinates:Point, hight:Int)
 case class Point(x:Int, y:Int)
-case class MaxCost(from:Item, to:Item, cost:Double)
+case class MaxCost(from:Item, to:Item, drop:Int, length:Double)
