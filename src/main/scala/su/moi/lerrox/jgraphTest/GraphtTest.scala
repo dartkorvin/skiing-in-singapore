@@ -1,5 +1,7 @@
 package su.moi.lerrox.jgraphTest
 
+import java.util.Date
+
 import org.jgrapht.alg._
 import org.jgrapht.graph._
 import org.jgrapht.traverse.TopologicalOrderIterator
@@ -10,7 +12,7 @@ import scala.collection.JavaConversions._
  * Created by lerrox on 13.07.15.
  */
 object GraphtTest extends App{
-
+  println(s"started ${new Date()}")
   val mapString = scala.io.Source.fromURL("http://s3-ap-southeast-1.amazonaws.com/geeks.redmart.com/coding-problems/map.txt").mkString
   //val mapString = "4 4 \n4 8 7 3 \n2 5 9 3 \n6 3 2 5 \n4 4 1 6"
   val mountainsByCoordinates =   mapString.split("\n").zipWithIndex.flatMap{
@@ -55,28 +57,37 @@ object GraphtTest extends App{
 
   var max:Option[MaxCost] = None
 
-  for(item<- iter){
-    for(nextItem <- graph.vertexSet()){
-      val drop = item.hight - nextItem.hight
-      max match {
-        case Some(oldMax) =>{
-          if(drop > oldMax.drop){
-            val magicWand = new BellmanFordShortestPath(graph, item)
-            val pathLength = magicWand.getCost(nextItem)
-            if(!pathLength.isInfinity && oldMax.length <= pathLength * -1){
-              max = Some(MaxCost(item, nextItem, drop, pathLength * -1))
+  iter.zipWithIndex.foreach{
+    case(item, count)=>
+      val magicWand = new BellmanFordShortestPath(graph, item)
+      for(nextItem <- graph.vertexSet()){
+        if(item.hight > nextItem.hight){
+          max match {
+            case Some(oldMax) =>{
+              if(item != nextItem){
+                val pathLength = magicWand.getCost(nextItem)
+                if(!pathLength.isInfinity && oldMax.length < pathLength * -1){
+                  val drop = item.hight - nextItem.hight
+                  if(drop > oldMax.drop) {
+                    max = Some(MaxCost(item, nextItem, drop, pathLength * -1))
+                    println(max)
+                  }
+                }
+              }
+            }
+            case None => {
+              if(item.hight > nextItem.hight){
+                val magicWand = new BellmanFordShortestPath(graph, item)
+                val length = magicWand.getCost(nextItem) * -1
+                val drop = item.hight - nextItem.hight
+                max = Some(MaxCost(item, nextItem, drop, length))
+                println(max)
+              }
             }
           }
         }
-        case None => {
-          if(item.hight > nextItem.hight){
-            val magicWand = new BellmanFordShortestPath(graph, item)
-            val length = magicWand.getCost(nextItem) * -1
-            max = Some(MaxCost(item, nextItem, drop, length))
-          }
-        }
+
       }
-    }
   }
 
 
@@ -87,6 +98,7 @@ object GraphtTest extends App{
       println(s"longest path drop is ${max.drop}, and it's path through ${max.length + 1} mountains")
     }
   }
+  println(s"ended ${new Date()}")
 
 }
 
