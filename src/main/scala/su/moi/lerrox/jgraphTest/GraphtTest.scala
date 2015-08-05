@@ -14,9 +14,9 @@ object GraphtTest extends App{
   val mapString = scala.io.Source.fromURL("http://s3-ap-southeast-1.amazonaws.com/geeks.redmart.com/coding-problems/map.txt").mkString
   val mountainsByCoordinates =   mapString.split("\n").zipWithIndex.flatMap{
     case(line, lineNum) =>
-      line.split("\\W+").zipWithIndex.map{
+      line.split(" ").zipWithIndex.map{
         case (valueString, columnNum) =>
-          Item(Point(lineNum, columnNum), valueString.toInt)
+          Item(Point(columnNum, lineNum), valueString.toInt)
       }
   }.groupBy(item => item.coordinates).mapValues(_.head)
 
