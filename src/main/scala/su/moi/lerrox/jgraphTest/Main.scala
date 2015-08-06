@@ -12,10 +12,9 @@ import scala.collection.JavaConversions._
 /**
  * Created by lerrox on 13.07.15.
  */
-object Main extends App {
+object main extends App {
 
-  val mapString = "4 4 \n4 8 7 3 \n2 5 9 3 \n6 3 2 5 \n4 4 1 6"
-  //val mapString = scala.io.Source.fromURL("http://s3-ap-southeast-1.amazonaws.com/geeks.redmart.com/coding-problems/map.txt").mkString
+  val mapString = scala.io.Source.fromURL("http://s3-ap-southeast-1.amazonaws.com/geeks.redmart.com/coding-problems/map.txt").mkString
   val guide = new MountainGuide(mapString)
 
 
