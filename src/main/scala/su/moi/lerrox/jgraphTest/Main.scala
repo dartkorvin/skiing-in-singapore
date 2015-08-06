@@ -1,11 +1,10 @@
 package su.moi.lerrox.jgraphTest
 
+import java.util
 import java.util.Date
-
 import org.jgrapht.alg._
 import org.jgrapht.graph._
 import org.jgrapht.traverse.TopologicalOrderIterator
-
 import scala.collection.JavaConversions._
 
 
@@ -34,35 +33,27 @@ class MountainGuide(mountainsMap: String) {
   
   def longestPathWithMaxDrop(): Option[BestWay] = { // TODO not functional style, refactor it
     var max: BestWay = null
+    val queue = new util.LinkedList[Item]()
+    var topoList = new TopologicalOrderIterator(graph, queue).toList
 
-    var iter: Iterator[Item] = new TopologicalOrderIterator(graph)
+    topoList.zipWithIndex.foreach{
+      case (item, i)=>
+        val magicWand = new BellmanFordShortestPath(graph, item)
+        topoList.slice(i+1, graph.vertexSet().size()).foreach{
+          nextItem =>
+            val drop = item.hight - nextItem.hight
+            val pathLength = magicWand.getCost(nextItem)
+            if (!pathLength.isInfinity) {
+              val pathLonger = max != null && max.length < (pathLength * -1 +1).toInt
+              val pathEqualsButMountainHigher = max != null && max.length == (pathLength * -1 +1).toInt && drop > max.drop
+              val firstValue = max == null
 
-    while (iter.hasNext) {
-
-      // dublicate iterators
-      val item = iter.next()
-      val (it1a, it1b) = iter.duplicate
-      iter = it1a
-      val it2 = it1b
-      val magicWand = new BellmanFordShortestPath(graph, item)
-
-      while (it2.hasNext) {
-
-        val nextItem = it2.next()
-        val drop = item.hight - nextItem.hight
-        val pathLength = magicWand.getCost(nextItem)
-
-        if (!pathLength.isInfinity) {
-          val pathLonger = max != null && max.length < (pathLength * -1 +1).toInt
-          val pathEqualsButMountainHigher = max != null && max.length == (pathLength * -1 +1).toInt && drop > max.drop
-          val firstValue = max == null
-
-          if (pathLonger || pathEqualsButMountainHigher || firstValue) {
-            max = BestWay(item, nextItem, drop, (pathLength * -1 +1).toInt)
-            println(s"${max} : ${new Date()}")
-          }
+              if (pathLonger || pathEqualsButMountainHigher || firstValue) {
+                max = BestWay(item, nextItem, drop, (pathLength * -1 +1).toInt)
+                println(s"${max} : ${new Date()}")
+              }
+            }
         }
-      }
     }
 
     Option(max)
@@ -111,7 +102,6 @@ class MountainGuide(mountainsMap: String) {
                   // println(s"create Graph edje ((${v.coordinates.x}, ${v.coordinates.y}})->(${item.coordinates.x},${item.coordinates.y}})) with weight ${weight}")
                 }
               }
-
               case None =>
             }
         }
